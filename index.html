@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - multiple elements with text</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+		<style>
+			* {
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+			body {
+				
+				margin: auto;
+				padding: .5in;
+				max-width: 7in;
+				text-align: justify;
+        background-color: #333 !important; 
+				color: #fff;
+			
+
+			}
+
+			a {
+				color: #08f;
+			}
+
+			#info {
+				left: 0px;
+			}
+
+			.view {
+				width: 5in;
+				height: 5in;
+				margin: auto;
+			}
+
+			#c {
+				position: fixed;
+				left: 0px; top: 0px;
+				width: 100%;
+				height: 100%;
+				background-color: #333 !important;
+				z-index: -1;
+			}
+			
+			
+
+			
+		</style>
+	</head>
+	<body>
+
+		<canvas id="c"   ></canvas>
+
+		
+
+		
+		
+
+		<script type="module">
+
+			import * as THREE from 'three';
+
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+			const scenes = [];
+
+			const clock = new THREE.Clock();
+
+			let views, t, canvas, renderer;
+			const mixers = [];
+
+			window.onload = init;
+
+			function init() {
+
+				const balls = 20;
+				const size = .25;
+
+				const colors = [
+					'rgb(0,127,255)', 'rgb(255,0,0)', 'rgb(0,255,0)', 'rgb(0,255,255)',
+					'rgb(255,0,255)', 'rgb(255,0,127)', 'rgb(255,255,0)', 'rgb(0,255,127)'
+				];
+
+				canvas = document.getElementById( 'c' );
+
+      
+				renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true , alpha: true} );
+
+				renderer.setPixelRatio( window.devicePixelRatio );
+				
+
+				views = document.querySelectorAll( '.view' );
+
+				for ( let n = 0; n < views.length; n ++ ) {
+
+	
+					const loader = new GLTFLoader();
+
+
+					const scene = new THREE.Scene();
+					const ambientLight = new THREE.AmbientLight(0xffffff); // Add an ambient light with white color
+					scene.add(ambientLight);
+				
+					scene.background = new THREE.Color( 0x343434);
+					loader.load( './mihalis/mihalis' + (n) + '.glb', function ( gltf ) {
+					if(n == 0)gltf.scene.scale.set(9, 9, 0);
+					if(n ==3) gltf.scene.scale.set(3, 3, 3);
+					scene.add( gltf.scene );
+					const mesh = gltf.scene.children[ 0 ];
+
+					const mixer = new THREE.AnimationMixer( mesh );
+					mixer.clipAction( gltf.animations[ 0 ] ).setDuration( 1 ).play();
+					mixers.push( mixer );
+					
+
+					}, undefined, function ( error ) {
+
+					console.error( error );
+
+					} );
+
+					
+				
+
+					scene.userData.view = views[ n ];
+					
+
+					const camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 100 );
+					camera.position.set( 0, 0, 20);
+					scene.userData.camera = camera;
+
+					const controls = new OrbitControls( camera, views[ n ] );
+					scene.userData.controls = controls;
+
+					scenes.push( scene );
+
+				}
+
+				t = 0;
+				animate();
+
+			}
+
+			function updateSize() {
+
+				const width = canvas.clientWidth;
+				const height = canvas.clientHeight;
+
+				if ( canvas.width !== width || canvas.height != height ) {
+
+					renderer.setSize( width, height, false );
+
+				}
+
+			}
+			
+			function animate() {
+
+			
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+				
+
+			}
+
+			function render() {
+				updateSize();
+        renderer.alpha = true;
+				renderer.setClearColor( 0x343434, 1);
+				renderer.setScissorTest( false );
+				scenes.forEach( function ( scene ) {
+					scene.children[ 0 ].rotation.y = Date.now() * 0.001;
+					const rect = scene.userData.view.getBoundingClientRect();
+					// check if it's offscreen. If so skip it
+					if ( rect.bottom < 0 || rect.top > renderer.domElement.clientHeight ||
+						 rect.right < 0 || rect.left > renderer.domElement.clientWidth ) {
+						return; // it's off screen
+					}
+					// set the viewport
+					const width = rect.right - rect.left;
+					const height = rect.bottom - rect.top;
+					const left = rect.left;
+					const bottom = renderer.domElement.clientHeight - rect.bottom;
+          renderer.setScissorTest(true);
+					renderer.setViewport( left, bottom, width, height );
+					renderer.setScissor( left, bottom, width, height );
+          
+					renderer.render( scene, scene.userData.camera );
+
+					const delta = clock.getDelta();
+					renderer.render( scene, scene.userData.camera );
+					
+						for ( let i = 0; i < mixers.length; i ++ ) {
+
+							mixers[ i ].update( delta );
+
+						}
+           
+						renderer.render( scene, camera );
+				} );
+
+
+				t += clock.getDelta() * 60;
+
+			}
+
+		</script>
+	
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+	<div class="container-fluid">
+
+	  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+		<span class="navbar-toggler-icon"></span>
+	  </button>
+	  <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+		<div class="navbar-nav">
+		 
+		  <a class="nav-link" href="#temp">Temperature</a>
+		  <a class="nav-link" href="#Blue">Earth</a>
+		  <a class="nav-link" href="#wildfire">WildFires</a>
+		  <a class="nav-link" href="#Drought">Droughts</a>
+		  <a class="nav-link" href="#sea">Sea </a>
+		  
+		</div>
+	  </div>
+	</div>
+  </nav>
+  <br>
+		<h1>Global Warming</h1>
+		<br>
+		<h4>Simply Explained</h4>
+		<br>
+		<br>
+		<br>
+		
+		<h2 id="temp">Temperature Trend in the last century</h2>
+		<div>
+			the Earth's temperature has been steadily increasing over the past century due to the emission of greenhouse gases, such as carbon dioxide, methane, and nitrous oxide, from human activities like burning fossil fuels, deforestation, and industrial processes. This phenomenon is commonly referred to as global warming.</div>
+		<div>According to data from the National Oceanic and Atmospheric Administration (NOAA), the global average temperature has risen by approximately 1.1 degrees</div>
+		<br>
+		<div>This trend is expected to continue in the coming years, and if left unchecked, it could have catastrophic consequences for our planet and its inhabitants. Scientists predict that global temperatures could rise by another 1.5 to 5 degrees Celsius (2.7 to 9 degrees Fahrenheit) by the end of this century, depending on the amount of greenhouse gases emitted.</div>
+
+		<div class="view"></div>
+
+		<h2 id = "Blue">The Blue Planet of Life</h2>
+		<div>Temperature is an incredibly important factor for Earth because it allows for the existence and sustainability of life on our planet. The temperature range on Earth is neither too hot nor too cold, making it hospitable to a wide range of life forms. This is why Earth is often referred to as the "blue planet of life".</div>
+		<br>
+		<div> temperature affects the chemical reactions that occur in living organisms. Most living organisms are adapted to specific temperature ranges and cannot survive outside of those ranges. For example, human body temperature is around 37°C (98.6°F), and if our body temperature were to rise or fall significantly outside of this range, we would become ill and eventually die</div>
+		<br>
+		<div>Another important factor is that temperature plays a critical role in regulating Earth's climate. The temperature of the planet determines the amount of energy that is absorbed and emitted by the Earth's atmosphere, which in turn affects weather patterns and the distribution of precipitation. Changes in temperature can also impact the polar ice caps, ocean currents, and sea levels, which can have significant effects on global ecosystems and human societies.</div>
+		<div class="view"></div>
+
+		<h2 id = "Drought">Droughts and Dry Land</h2>
+
+		<div>One of the most significant changes that can be expected is an increase in the frequency and severity of droughts in many regions around the world. As global temperatures rise, more water will evaporate from the surface of the Earth, leading to drier conditions in some areas. This, combined with changes in precipitation patterns and increased demand for water due to population growth, could lead to more frequent and severe droughts that have the potential to impact food security and human well-being.</div>
+		<br>
+		<div>The impacts of drought can be significant and far-reaching. In agricultural regions, drought can lead to crop failure and reduced food production, which can have ripple effects throughout the global food system. Drought can also lead to water scarcity, which can affect both human populations and ecosystems</div>
+		
+
+		
+
+		<div class="view"></div>
+
+		<h2 id ="wildfire">WildFires</h2>
+		<div>Wildfires are large, uncontrolled fires that occur in natural landscapes such as forests, grasslands, and shrublands. They are often caused by lightning strikes or human activity and can be exacerbated by dry conditions and high winds.</div>
+		<br>
+		<div>One of the ways that global warming is expected to contribute to an increase in wildfires is through its impact on climate patterns. As temperatures rise and weather patterns become more erratic, we can expect more frequent and severe droughts in some regions, which can lead to dry conditions that make it easier for fires to start and spread. Additionally, warmer temperatures can increase the likelihood of lightning strikes and other ignition sources.</div>
+		<br>
+		<div>The impacts of wildfires can be significant for both animals and humans. In addition to the immediate threat to human life and property, wildfires can lead to long</div>
+		<br>
+		<div>Wildfires can also have economic impacts, particularly in regions where forestry and tourism are major industries. The costs of fighting wildfires and repairing damage can be significant, and the impacts on local communities can be long-lasting.</div>
+		</div>
+
+		<div class="view"></div>
+
+		<h2 id="sea">Increase in Sea Level</h2>
+	
+
+		<div>One of the key impacts of global warming on the Earth's climate system is the melting of glaciers and ice sheets, which is contributing to rising sea levels. As temperatures rise, glaciers and ice sheets in polar regions and mountainous areas are melting at an accelerated rate, adding more water to the oceans.</div>
+		<br>
+		<div>The warming of ocean waters is also contributing to sea level rise. As ocean water warms, it expands, causing the water to take up more space and increasing the volume of the ocean.</div>
+		<div class="view"></div>
+
+		
+		
+		<div>The impacts of rising sea levels can be significant for both animals and humans. As sea levels rise, coastal areas are increasingly prone to flooding and storm surges, which can damage property and infrastructure and threaten human life. In some cases, rising sea levels can also lead to the loss of land and displacement of people.</div>
+		<br>
+		<div>The impacts of rising sea levels on animal populations can be complex and depend on a variety of factors. Some animals, such as marine mammals and sea turtles, rely on coastal habitats for breeding, feeding, and resting. Rising sea levels can lead to the loss of these habitats, making it more difficult for these species to survive.</div>
+		<br>
+		<div>Other animals, such as birds and insects, may be impacted by changes in the distribution of wetlands and other coastal habitats that are important for their survival. Additionally, changes in ocean chemistry and temperature can impact marine ecosystems and the animals that depend on them.</div>
+		<div class="view"></div>
+		
+	</body>
+</html>

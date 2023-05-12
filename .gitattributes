@@ -1,0 +1,8 @@
+mihalis/mihalis0.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis1.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis2.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis3.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis4.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis5.glb filter=lfs diff=lfs merge=lfs -text
+mihalis/mihalis6.glb filter=lfs diff=lfs merge=lfs -text
+*.glb filter=lfs diff=lfs merge=lfs -text
